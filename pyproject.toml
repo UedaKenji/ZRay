@@ -4,8 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zray"
-version = "0.1.0"
-description = "A ray tracing library for optical systems in axsymmetric vessels"
+git add .; git commit -m "remove description about version"description = "A ray tracing library for optical systems in axsymmetric vessels"
 authors = [
     { name = "UedaKenji", email = "ueda.kenji@nifs.ac.jp" }
 ]
