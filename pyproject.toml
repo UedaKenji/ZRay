@@ -1,16 +1,20 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "zray"
-git add .; git commit -m "remove description about version"description = "A ray tracing library for optical systems in axsymmetric vessels"
+dynamic = ["version"]
+description = "A ray tracing library for optical systems in axsymmetric vessels"
 authors = [
     { name = "UedaKenji", email = "ueda.kenji@nifs.ac.jp" }
 ]
 license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.10"
+dependencies = [
+  "dxfgrabber",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
