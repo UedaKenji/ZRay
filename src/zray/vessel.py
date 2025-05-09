@@ -527,9 +527,8 @@ class AxisymmetricVessel:
         fill[:,:] = is_bound[:, :].astype(np.uint8)                
         mask = np.zeros((h+2, w+2), np.uint8)
         
+        # Removed OpenCV's floodFill usage
         #cv2.floodFill(fill, mask, (i_r,i_z), 2)
-        #fill = flood_fill_label(fill, (i_r, i_z), new_value=2, connectivity=1)
-
         fill = flood_fill_numpy(fill, (i_r, i_z), 2)
 
         Is_in = (fill == 2)
