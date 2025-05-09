@@ -551,8 +551,118 @@ class AxisymmetricVessel:
 
         
         return NaN_factor,imshow_extent
-
     
+    def plot_3d_surface(self, ax=None, start_angle=0, end_angle=360, num_points=50,color=None,alpha=0.5):
+        """
+        Plots a 3D surface by rotating the RZ cross-sectional lines and arcs around the Z-axis.
+
+        Parameters:
+        -----------
+        ax : matplotlib.axes._subplots.Axes3DSubplot, optional
+            The 3D axis to plot on. If None, a new figure and axis are created.
+        start_angle : float, optional
+            The starting angle of rotation in degrees. Default is 0.
+        end_angle : float, optional
+            The ending angle of rotation in degrees. Default is 360.
+        num_points : int, optional
+            The number of points to use for the rotation. Default is 100.
+        color : str, optional
+            The color of the surface. Default is None.
+        alpha : float, optional
+            The transparency of the surface. Default is 0.5.
+        """
+        from mpl_toolkits.mplot3d import Axes3D
+        from matplotlib import pyplot as plt
+        import numpy as np
+
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+
+        # Convert angles to radians
+        start_angle_rad = np.radians(start_angle)
+        end_angle_rad = np.radians(end_angle)
+
+        # Generate angles for rotation
+        theta = np.linspace(start_angle_rad, end_angle_rad, num_points)
+
+        # Plot lines
+        for line in self.Lines:
+            r = np.array([line.p0[0], line.p1[0]])
+            z = np.array([line.p0[1], line.p1[1]])
+            r_grid, theta_grid = np.meshgrid(r, theta)
+            z_grid, _ = np.meshgrid(z, theta)
+
+            x = r_grid * np.cos(theta_grid)
+            y = r_grid * np.sin(theta_grid)
+            if color is None:
+                _color = 'blue'
+            else:
+                _color = color
+            ax.plot_surface(x, y, z_grid, alpha=alpha, color=_color, edgecolor='none')
+
+        # Plot arcs
+        for arc in self.Arcs:
+            theta_start = np.radians(arc.theta_start)
+            theta_end = np.radians(arc.theta_end)
+
+            if theta_start > theta_end:
+                theta_end += 2 * np.pi
+            theta_arc = np.linspace(theta_start, theta_end, num_points)
+
+            theta_arc_grid, theta_grid = np.meshgrid(theta_arc, theta)
+
+            r_grid = arc.radius * np.cos(theta_arc_grid) + arc.center[0]
+            z_grid = arc.radius * np.sin(theta_arc_grid) + arc.center[1]
+
+            x = r_grid * np.cos(theta_grid)
+            y = r_grid * np.sin(theta_grid)
+
+            z = z_grid
+
+            if color is None:
+                _color = 'red'
+            else:
+                _color = color
+
+            ax.plot_surface(x, y, z, alpha=alpha, color=_color, edgecolor='none')
 
 
-    
+
+
+        # Plot circles
+        for circle in self.Circles:
+            theta_circle = np.linspace(0, 2 * np.pi, num_points)
+            r = circle.radius
+            z = circle.center[1]
+
+            x = r * np.cos(theta_circle)
+            y = r * np.sin(theta_circle)
+            z = np.full_like(x, z)
+
+            if color is None:
+                _color = 'green'
+            else:
+                _color = color
+
+            ax.plot(x, y, z, color=_color, alpha=alpha)
+
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+
+        # Set aspect ratio to be equal
+        max_range = np.array([ax.get_xlim(), ax.get_ylim(), ax.get_zlim()]).ptp().max() / 2.0
+        mid_x = (ax.get_xlim()[0] + ax.get_xlim()[1]) * 0.5
+        mid_y = (ax.get_ylim()[0] + ax.get_ylim()[1]) * 0.5
+        mid_z = (ax.get_zlim()[0] + ax.get_zlim()[1]) * 0.5
+        ax.set_xlim(mid_x - max_range, mid_x + max_range)
+        ax.set_ylim(mid_y - max_range, mid_y + max_range)
+        ax.set_zlim(mid_z - max_range, mid_z + max_range)
+        ax.set_title('3D Surface Plot of Axisymmetric Vessel') 
+
+        return ax
+
+
+
+

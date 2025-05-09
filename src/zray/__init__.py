@@ -11,6 +11,7 @@ if parent_dir not in sys.path:
 from .vessel import *
 from .measurement import *
 from .main import *
+from . import measurement
 #from .raytracing import Ray, trace_ray
 
 #__all__ = ["OpticalSystem", "CylindricalContainer", "Ray", "trace_ray"]

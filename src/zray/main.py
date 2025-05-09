@@ -11,12 +11,15 @@ from dataclasses import dataclass
 import tqdm
 from typing import List, Tuple, Optional
 #from . import plot_utils
-import plot_utils
 
 
 __all__ = ["Raytracing", "Ray", "ImageVector"]
 
 class ImageVector(np.ndarray):
+    """
+    A subclass of numpy.ndarray that represents a 1D array with an associated 2D image shape.
+    Provides methods to reshape the array into its 2D image form and flatten it back to 1D.
+    """
     def __new__(cls, input_array, im_shape):
         obj = np.asarray(input_array).view(cls)
         if np.prod(im_shape) != obj.size:
@@ -37,6 +40,10 @@ from typing import cast
 
 @dataclass
 class Ray:
+    """
+    Represents a ray in 3D space with position, direction, length, and other properties.
+    Provides methods to generate ray positions in Cartesian and cylindrical coordinates.
+    """
     Possition_xyz: np.ndarray
     Direction_xyz: np.ndarray
     Length :np.ndarray|ImageVector = 0.0
@@ -49,7 +56,14 @@ class Ray:
 
     def generate_xyz(self,Lnum=100, Lmax=None):
         """
-        rayの位置を返す
+        Generate the 3D positions of the ray along its direction.
+
+        Parameters:
+        Lnum (int): Number of points to generate along the ray.
+        Lmax (float): Maximum length of the ray. Defaults to the ray's length.
+
+        Returns:
+        Tuple[np.ndarray, np.ndarray, np.ndarray]: Arrays of x, y, z positions.
         """
         if Lmax is None:
             Lmax = np.array(self.Length)
@@ -70,7 +84,14 @@ class Ray:
     
     def generate_rz(self,Lnum=100, Lmax=None):
         """
-        rayの位置を返す
+        Generate the radial and z positions of the ray in cylindrical coordinates.
+
+        Parameters:
+        Lnum (int): Number of points to generate along the ray.
+        Lmax (float): Maximum length of the ray. Defaults to the ray's length.
+
+        Returns:
+        Tuple[np.ndarray, np.ndarray]: Arrays of radial and z positions.
         """
         x,y,z = self.generate_xyz(Lnum, Lmax)
 
@@ -80,7 +101,14 @@ class Ray:
 
     def generate_rphiz(self,Lnum=100, Lmax=None):
         """
-        rayの位置を返す
+        Generate the radial, azimuthal, and z positions of the ray in cylindrical coordinates.
+
+        Parameters:
+        Lnum (int): Number of points to generate along the ray.
+        Lmax (float): Maximum length of the ray. Defaults to the ray's length.
+
+        Returns:
+        Tuple[np.ndarray, np.ndarray, np.ndarray]: Arrays of radial, azimuthal, and z positions.
         """
         x,y,z = self.generate_xyz(Lnum, Lmax)
 
@@ -91,10 +119,16 @@ class Ray:
     
     def generate_projectionmatrix_from_grid(self,r_grid,z_grid, Lnum=1000):
         """
-        2Dgridから投影行列を作成 
-        高速化はしてないため、大量のrayを扱う場合は注意
-        """
+        Create a projection matrix from a 2D grid.
 
+        Parameters:
+        r_grid (np.ndarray): Radial grid points.
+        z_grid (np.ndarray): Z grid points.
+        Lnum (int): Number of points along the ray.
+
+        Returns:
+        np.ndarray: Projection matrix.
+        """
         rray,zray = self.generate_rz(Lnum)
         M = rray.shape[0]
         r_grid = r_grid.flatten()
@@ -122,15 +156,32 @@ class Ray:
 
 
 class Raytracing:
+    """
+    A class for performing ray tracing in a 3D axisymmetric vessel.
+    Handles ray generation, reflection, and interaction with vessel curves.
+    """
     def __init__(self, 
         container :vessel.AxisymmetricVessel,
         measurement:measurement.Camera|measurement.MultiCamera,):
+        """
+        Initialize the Raytracing object with a vessel container and measurement system.
+
+        Parameters:
+        container (vessel.AxisymmetricVessel): The vessel containing curves for ray tracing.
+        measurement (measurement.Camera | measurement.MultiCamera): The measurement system.
+        """
         self.container = container  
         self.ncurves = len(container.Curves)
         self.measurement = measurement
         pass 
 
     def save_setting(self, filename:str):
+        """
+        Save the container and measurement settings to a JSON file.
+
+        Parameters:
+        filename (str): The name of the file to save the settings.
+        """
         # self.containerとself.measurementをjson形式で保存する
         # measurement はcameraかmulti-cameraのどちらかであることを想定
 
@@ -148,6 +199,15 @@ class Raytracing:
 
     @classmethod
     def load_setting(cls, filename:str):
+        """
+        Load container and measurement settings from a JSON file.
+
+        Parameters:
+        filename (str): The name of the file to load the settings.
+
+        Returns:
+        Raytracing: An instance of the Raytracing class.
+        """
         # save_settingで保存したjson形式のファイルを読み込む
         # measurement はcameraかmulti-cameraのどちらかであることを想定
 
@@ -176,7 +236,12 @@ class Raytracing:
     
     
     def save_heavy_model(self, filename:str):
+        """
+        Save the Raytracing object and its settings to a pickle file.
 
+        Parameters:
+        filename (str): The name of the file to save the object.
+        """
         ext = '.pkl'
 
         if ext in filename:
@@ -188,6 +253,15 @@ class Raytracing:
 
     @classmethod
     def load_heavy_model(cls, filename:str):
+        """
+        Load a Raytracing object from a pickle file.
+
+        Parameters:
+        filename (str): The name of the file to load the object.
+
+        Returns:
+        Raytracing: An instance of the Raytracing class.
+        """
         if not filename.endswith('.pkl'):
             raise ValueError("Filename must end with .pkl")
         # pd.read_pickleでクラスを読み込む
@@ -196,6 +270,15 @@ class Raytracing:
 
     @classmethod
     def load(cls, filename:str):
+        """
+        Load a Raytracing object from a JSON or pickle file.
+
+        Parameters:
+        filename (str): The name of the file to load the object.
+
+        Returns:
+        Raytracing: An instance of the Raytracing class.
+        """
         if filename.endswith('.json'):
             return cls.load_setting(filename)
         elif filename.endswith('.pkl'):
@@ -207,9 +290,12 @@ class Raytracing:
             pass_through_first:bool = True,
              ):
         """
-        メイン関数
-        """
+        Perform the main ray tracing process, including reflections.
 
+        Parameters:
+        nreflections (int): Number of reflections to calculate.
+        pass_through_first (bool): Whether to pass through the first reflection.
+        """
         def main2(O,D,Cos=None):
             
             inf_index = np.isinf(O[:,0])
@@ -304,23 +390,47 @@ class Raytracing:
 
     def plot(self, fig=None,  **kwargs):
         """
-        rayのプロット
+        Plot the rays traced in the vessel.
+
+        Parameters:
+        fig (matplotlib.figure.Figure): The figure to plot on. If None, a new figure is created.
+        kwargs: Additional keyword arguments for the plot.
         """
         n = len(self.rays)
 
-        fig,axs = plt.subplots(1,n,figsize=(2*n,2), sharex=True, sharey=True)
+
+        fig,axs = plt.subplots(2,n,figsize=(3*n,2), sharex=True, sharey=True)
+
         for i,ray in enumerate(self.rays):
             L = ray.Length
 
-            plot_utils.imshow_cbar_bottom(axs[i], L.im,cbar_title="Length [m]",  **kwargs)
-
-    
+            imshow_cbar_bottom(axs[i], L.im,cbar_title="Length [m]",  **kwargs)
 
 
 
 
 
 
+def imshow_cbar_bottom(
+    ax:plt.Axes,
+    im0:np.ndarray,
+    cbar_title=None,
+    **kwargs
+    ):
+    """
+    Display an image with a colorbar below it.
 
-
-
+    Parameters:
+    ax (plt.Axes): The axes to plot on.
+    im0 (np.ndarray): The image data to display.
+    cbar_title (str): Title for the colorbar.
+    kwargs: Additional keyword arguments for imshow.
+    """
+    import mpl_toolkits.axes_grid1
+    im = ax.imshow(im0,**kwargs)
+    divider = mpl_toolkits.axes_grid1.make_axes_locatable(ax)    
+    cax = divider.append_axes("bottom", size="5%", pad='3%')
+    cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
+    if cbar_title is not None:
+        cbar.set_label(cbar_title)
+    ax.set_aspect('equal')
