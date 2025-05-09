@@ -8,6 +8,10 @@ from abc import ABC, abstractmethod
 
 
 class Camera(ABC):
+    """
+    Abstract base class for camera objects.
+    Provides methods for generating rays and converting camera data to and from dictionaries.
+    """
     @abstractmethod
     def generate_ray(self):
         pass
@@ -40,6 +44,16 @@ class Camera(ABC):
 
 @dataclass
 class LineCamera(Camera): #センサーが直線のカメラ
+    """
+    Represents a line camera with a linear sensor.
+
+    Attributes:
+    focal_length (float): Focal length of the camera in meters.
+    location (Tuple[float, float, float]): 3D coordinates of the camera's location.
+    direction (Tuple[float, float, float]): Direction vector of the camera.
+    sensor_size (float): Size of the sensor in meters.
+    resolution (int): Number of pixels in the sensor.
+    """
     focal_length: float               #: 焦点距離[m]
     location: Tuple[float,float,float] #: カメラの位置（３次元座標）[m]
     direction: Tuple[float,float,float]
@@ -57,12 +71,10 @@ class LineCamera(Camera): #センサーが直線のカメラ
     def generate_ray(self, 
         ) -> Tuple[np.ndarray, np.ndarray]:
         """
-        全ピクセルに対応する、positionとray_dirを計算する．
-        numpyのブロードキャストを利用して、一括計算する．
-        グローバル座標で、中心軸の垂直な単位ベクトルを求める。このとき、水平なベクトルと、それに直交するベクトルにわける。
-        上記のベクトルを基底とする座標系状で、センサーの全ピクセルの位置を求める。
-        センサーピクセルのグローバル座標を求める。
-        センサーピクセルのグローバル座標から、positionを引いて、ray_dirを求める。
+        Generate rays corresponding to all pixels in the camera's sensor.
+
+        Returns:
+        Tuple[np.ndarray, np.ndarray]: Arrays of positions and directions for the rays.
         """
         # position は(M,3 ) の配列にブロードキャストする。
         position = np.broadcast_to(self.location, (self.M, 3))
@@ -102,6 +114,17 @@ class LineCamera(Camera): #センサーが直線のカメラ
 
 @dataclass
 class Camera2D_xyz(Camera):
+    """
+    Represents a 2D camera in Cartesian coordinates.
+
+    Attributes:
+    focal_length (float): Focal length of the camera in meters.
+    location (Tuple[float, float, float]): 3D coordinates of the camera's location.
+    direction (Tuple[float, float, float]): Direction vector of the camera.
+    sensor_size (Tuple[float, float]): Width and height of the sensor in meters.
+    resolution (Tuple[int, int]): Number of pixels in the sensor (width, height).
+    rotation (float): Rotation angle of the camera in radians.
+    """
     focal_length: float               #: 焦点距離[m]
     location: Tuple[float,float,float] #: カメラの位置（３次元座標）[m]
     direction: Tuple[float,float,float]#: カメラの中心軸（正規化済みベクトル）
@@ -127,12 +150,13 @@ class Camera2D_xyz(Camera):
             imshape: bool = False
         ) -> Tuple[np.ndarray, np.ndarray]:     
         """
-        全ピクセルに対応する、positionとray_dirを計算する．
-        numpyのブロードキャストを利用して、一括計算する．
-        グローバル座標で、中心軸の垂直な単位ベクトルを求める。このとき、水平なベクトルと、それに直交するベクトルにわける。
-        上記のベクトルを基底とする座標系状で、センサーの全ピクセルの位置を求める。
-        センサーピクセルのグローバル座標を求める。
-        センサーピクセルのグローバル座標から、positionを引いて、ray_dirを求める。
+        Generate rays corresponding to all pixels in the camera's sensor.
+
+        Parameters:
+        imshape (bool): Whether to return the rays in the shape of the image.
+
+        Returns:
+        Tuple[np.ndarray, np.ndarray]: Arrays of positions and directions for the rays.
         """
 
         # position は(M,3 ) の配列にブロードキャストする。
@@ -186,6 +210,17 @@ class Camera2D_xyz(Camera):
 
 @dataclass
 class Camera2D_rphiz(Camera):
+    """
+    Represents a 2D camera in cylindrical coordinates.
+
+    Attributes:
+    focal_length (float): Focal length of the camera in meters.
+    sensor_size (Tuple[float, float]): Width and height of the sensor in meters.
+    resolution (Tuple[int, int]): Number of pixels in the sensor (width, height).
+    location (Tuple[float, float, float]): Cylindrical coordinates of the camera's location.
+    center_angles (Tuple[float, float]): Horizontal and vertical angles of the camera's center axis in degrees.
+    rotation (float): Rotation angle of the camera in radians.
+    """
     focal_length: float
     sensor_size: Tuple[float, float]
     resolution: Tuple[int, int]
@@ -230,9 +265,15 @@ class Camera2D_rphiz(Camera):
             imshape: bool = False
         ) -> Tuple[np.ndarray, np.ndarray]:     
         """
-        全ピクセルに対応する、positionとray_dirを計算する．
-        Camera_rphiの変換して、Camera_xyzに変換して、generate_rayを呼び出す。
+        Generate rays corresponding to all pixels in the camera's sensor.
+
+        Parameters:
+        imshape (bool): Whether to return the rays in the shape of the image.
+
+        Returns:
+        Tuple[np.ndarray, np.ndarray]: Arrays of positions and directions for the rays.
         """
+        # Camera_rphiの変換して、Camera_xyzに変換して、generate_rayを呼び出す。
         # Camera_rphiの座標を、Camera_xyzの座標に変換する
         location = self.location
 
@@ -248,6 +289,13 @@ class Camera2D_rphiz(Camera):
 
 
 class MultiCamera(Camera):
+    """
+    Represents a collection of multiple cameras.
+
+    Attributes:
+    camera_list (List[Camera]): List of camera objects.
+    name_list (List[str]): List of names for the cameras.
+    """
     def __init__(self, 
         camera_list:List[Camera],
         name_list:List[str] = None,
@@ -274,8 +322,14 @@ class MultiCamera(Camera):
     def M(self) -> int:
         return self.__M
     
-    def slice(self, arg:int|str) -> slice:
-        if isinstance(arg, int):
+    def slice(self, arg:int|str=None) -> slice:
+        if arg is None:
+            _dict = {}
+            for i, cam in enumerate(self.camera_list):
+                _dict[self.name_list[i]] =  self.slice_list[i]
+            return _dict
+
+        elif isinstance(arg, int):
             return self.slice_list[arg]
         elif isinstance(arg, str):
             if arg in self.name_list:
@@ -292,6 +346,12 @@ class MultiCamera(Camera):
         return res
     
     def generate_ray(self):
+        """
+        Generate rays for all cameras in the collection.
+
+        Returns:
+        Tuple[np.ndarray, np.ndarray]: Arrays of positions and directions for the rays.
+        """
         position = np.empty((self.M, 3))
         ray_dir = np.empty((self.M, 3))
         start = 0
@@ -335,6 +395,5 @@ class MultiCamera(Camera):
             
             print('')
         return cls(camera_list=camera_list, name_list=name_list)
-    
 
-        
+
