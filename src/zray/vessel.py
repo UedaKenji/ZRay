@@ -334,7 +334,6 @@ class AxisymmetricVessel:
         - The `NaN_factor` array can be used for masking or visualization purposes.
         """
         
-        import cv2
         from scipy import signal
 
 
@@ -525,11 +524,13 @@ class AxisymmetricVessel:
         #print(i_r,i_z)
 
         fill =  np.zeros((h,w), np.uint8)
-        fill[:,:] = 1 *is_bound[:,:]                        
+        fill[:,:] = is_bound[:, :].astype(np.uint8)                
         mask = np.zeros((h+2, w+2), np.uint8)
         
-        cv2.floodFill(fill, mask, (i_r,i_z), 2)
+        #cv2.floodFill(fill, mask, (i_r,i_z), 2)
+        #fill = flood_fill_label(fill, (i_r, i_z), new_value=2, connectivity=1)
 
+        fill = flood_fill_numpy(fill, (i_r, i_z), 2)
 
         Is_in = (fill == 2)
         Is_out = (fill == 0)
@@ -665,4 +666,22 @@ class AxisymmetricVessel:
 
 
 
+def flood_fill_numpy(fill, seed, new_val):
+    from collections import deque
+    h, w = fill.shape
+    orig_val = fill[seed]
+    if orig_val == new_val:
+        return fill
+    filled = fill.copy()
+    dq = deque([seed])
+    filled[seed] = new_val
 
+    # 4近傍
+    while dq:
+        r, c = dq.popleft()
+        for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)):
+            nr, nc = r+dr, c+dc
+            if 0 <= nr < h and 0 <= nc < w and filled[nr, nc] == orig_val:
+                filled[nr, nc] = new_val
+                dq.append((nr, nc))
+    return filled

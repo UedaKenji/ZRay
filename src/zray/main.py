@@ -399,7 +399,7 @@ class Raytracing:
         n = len(self.rays)
 
 
-        fig,axs = plt.subplots(2,n,figsize=(3*n,2), sharex=True, sharey=True)
+        fig,axs = plt.subplots(1,n,figsize=(2*n,2), sharex=True, sharey=True)
 
         for i,ray in enumerate(self.rays):
             L = ray.Length
