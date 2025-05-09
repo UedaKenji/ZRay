@@ -664,6 +664,10 @@ class AxisymmetricVessel:
         return ax
 
 
+def get_rt1_vessel():
+    import os
+    dir_name = os.path.dirname(__file__)
+    return AxisymmetricVessel.load_from_dxf( dir_name+r"\dxf_files\rt1_simple.dxf")
 
 def flood_fill_numpy(fill, seed, new_val):
     from collections import deque
