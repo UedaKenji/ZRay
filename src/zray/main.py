@@ -398,22 +398,25 @@ class Raytracing:
         """
         n = len(self.rays)
 
-
-        fig,axs = plt.subplots(1,n,figsize=(2*n,2), sharex=True, sharey=True)
+        if fig is None:
+            fig,axs = plt.subplots(1,n,figsize=(2*n,2), sharex=True, sharey=True)
+        else:
+            axs = fig.subplots(1,n,sharex=True, sharey=True)
 
         for i,ray in enumerate(self.rays):
             L = ray.Length
 
-            imshow_cbar_bottom(axs[i], L.im,cbar_title="Length [m]",  **kwargs)
+            ax = axs[i] if n>1 else axs
 
+            imshow_cbar_bottom(ax, L.im,cbar_title="Length [m]",  **kwargs)
 
 
 
 
 
 def imshow_cbar_bottom(
-    ax:plt.Axes,
-    im0:np.ndarray,
+    ax:plt.Axes =None,
+    im0:np.ndarray=None,
     cbar_title=None,
     **kwargs
     ):
@@ -427,9 +430,11 @@ def imshow_cbar_bottom(
     kwargs: Additional keyword arguments for imshow.
     """
     import mpl_toolkits.axes_grid1
-    im = ax.imshow(im0,**kwargs)
+    if ax is None:
+        ax = plt.gca()
     divider = mpl_toolkits.axes_grid1.make_axes_locatable(ax)    
     cax = divider.append_axes("bottom", size="5%", pad='3%')
+    im = ax.imshow(im0, **kwargs)
     cbar = plt.colorbar(im, cax=cax, orientation='horizontal')
     if cbar_title is not None:
         cbar.set_label(cbar_title)

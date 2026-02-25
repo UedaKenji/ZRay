@@ -652,7 +652,8 @@ class AxisymmetricVessel:
         ax.set_zlabel('Z')
 
         # Set aspect ratio to be equal
-        max_range = np.array([ax.get_xlim(), ax.get_ylim(), ax.get_zlim()]).ptp().max() / 2.0
+        #max_range = np.array([ax.get_xlim(), ax.get_ylim(), ax.get_zlim()]).ptp().max() / 2.0
+        max_range = max( np.ptp(ax.get_xlim()), np.ptp(ax.get_ylim()), np.ptp(ax.get_zlim()) ) / 2.0
         mid_x = (ax.get_xlim()[0] + ax.get_xlim()[1]) * 0.5
         mid_y = (ax.get_ylim()[0] + ax.get_ylim()[1]) * 0.5
         mid_z = (ax.get_zlim()[0] + ax.get_zlim()[1]) * 0.5

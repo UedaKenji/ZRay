@@ -5,19 +5,24 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "zray"
 dynamic = ["version"]
-description = "A ray tracing library for optical systems in axsymmetric vessels"
+description = "A ray tracing library for optical systems in axisymmetric vessels"
 authors = [
     { name = "UedaKenji", email = "ueda.kenji@nifs.ac.jp" }
 ]
-license = { text = "MIT" }
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
   "dxfgrabber",
+  "matplotlib",
+  "numba",
+  "numpy",
+  "pandas",
+  "scipy",
+  "tqdm",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
 
@@ -26,9 +31,24 @@ classifiers = [
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+zray = ["dxf_files/*.dxf"]
+
 [tool.setuptools.dynamic]
 version = {attr = "zray.__version__"}
+
+[dependency-groups]
+dev = [
+  "build>=1.2.2",
+  "ipykernel>=6.29",
+  "ipympl>=0.9,<0.10",
+  "ipywidgets>=8.1",
+  "pytest>=8.0",
+  "ruff>=0.6",
+  "twine>=6.0.0",
+]

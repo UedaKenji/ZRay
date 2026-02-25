@@ -57,15 +57,21 @@ class LineCamera(Camera): #センサーが直線のカメラ
     focal_length: float               #: 焦点距離[m]
     location: Tuple[float,float,float] #: カメラの位置（３次元座標）[m]
     direction: Tuple[float,float,float]
-    sensor_size: Tuple[float]
+    sensor_size: float | Tuple[float]
     resolution: int = 1
 
     def __post_init__(self):
         self.location = np.array(self.location)
         self.direction = np.array(self.direction)
         self.direction = self.direction / np.linalg.norm(self.direction)
+        sensor_size = np.asarray(self.sensor_size, dtype=float)
+        if sensor_size.ndim == 0:
+            self.sensor_size = float(sensor_size)
+        elif sensor_size.size == 1:
+            self.sensor_size = float(sensor_size.reshape(-1)[0])
+        else:
+            raise ValueError("LineCamera.sensor_size must be a scalar or length-1 sequence")
         self.__M        = self.resolution 
-        print(self)
         
     
     def generate_ray(self, 
@@ -90,16 +96,11 @@ class LineCamera(Camera): #センサーが直線のカメラ
             horizontal = np.array([-position[0,1], position[0,0], 0])
 
         horizontal = horizontal / np.linalg.norm(horizontal)
-        print(horizontal)
 
         w = (np.arange(self.M)+0.5) * self.sensor_size / self.M - self.sensor_size / 2
 
-        print(w)
-
         # センサーの全ピクセルの位置を求める
         sensor_pixel = sensor_center + w[:, np.newaxis] * horizontal
-
-        print(sensor_pixel)
 
         # センサーピクセルのグローバル座標から、positionを引いて、ray_dirを求める
         ray_dir = sensor_pixel - self.location
@@ -275,11 +276,15 @@ class Camera2D_rphiz(Camera):
         """
         # Camera_rphiの変換して、Camera_xyzに変換して、generate_rayを呼び出す。
         # Camera_rphiの座標を、Camera_xyzの座標に変換する
-        location = self.location
+
+        phi = np.deg2rad(self.location[1])
+        location = ( self.location[0] * np.cos(phi),
+                     self.location[0] * np.sin(phi),
+                     self.location[2] )
 
         # カメラの中心軸のベクトルを求める
-        direction = np.array([-np.cos(np.deg2rad(self.center_angles[1])) * np.cos(np.deg2rad(self.center_angles[0])),
-                              np.cos(np.deg2rad(self.center_angles[1])) * np.sin(np.deg2rad(self.center_angles[0])),
+        direction = np.array([-np.cos(np.deg2rad(self.center_angles[1])) * np.cos(np.deg2rad(self.center_angles[0])-phi),
+                              np.cos(np.deg2rad(self.center_angles[1])) * np.sin(np.deg2rad(self.center_angles[0])-phi),
                               np.sin(np.deg2rad(self.center_angles[1]))])
 
         # Camera_xyzに変換する
